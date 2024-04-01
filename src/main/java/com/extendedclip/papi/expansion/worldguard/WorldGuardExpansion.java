@@ -22,7 +22,6 @@ package com.extendedclip.papi.expansion.worldguard;
 
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
@@ -30,8 +29,11 @@ import org.bukkit.entity.Player;
 import org.codemc.worldguardwrapper.WorldGuardWrapper;
 import org.codemc.worldguardwrapper.region.IWrappedRegion;
 import org.codemc.worldguardwrapper.selection.ICuboidSelection;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
 import static java.util.stream.Collectors.toMap;
 
 public class WorldGuardExpansion extends PlaceholderExpansion {
@@ -55,7 +57,7 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
     }
 
     @Override
-    public String getName() {
+    public @NotNull String getName() {
         return NAME;
     }
 
@@ -65,7 +67,7 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
      * @return The name of the author as a String.
      */
     @Override
-    public String getAuthor() {
+    public @NotNull String getAuthor() {
         return "clip";
     }
 
@@ -75,7 +77,7 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
      * @return The version as a String.
      */
     @Override
-    public String getVersion() {
+    public @NotNull String getVersion() {
         return VERSION;
     }
 
@@ -85,13 +87,21 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
      * @return "worldguard".
      */
     @Override
-    public String getIdentifier() {
+    public @NotNull String getIdentifier() {
         return IDENTIFIER;
     }
 
 
     @Override
     public String onRequest(OfflinePlayer offlinePlayer, String params) {
+
+        if (params.equalsIgnoreCase("regions")) {
+            return String.join(", ",getRegions(offlinePlayer.getLocation()));
+        }
+        if (params.startsWith("is_in_region_")) {
+            List<String> regions = getRegions(offlinePlayer.getLocation());
+            return regions.contains(params.substring(13)) ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+        }
 
         // Get the wrapper from input location
         IWrappedRegion region;
@@ -141,8 +151,11 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
             case "region_name":
                 return region.getId();
             // Because some people are stubborn, let's have it also provide capitalization
+            // lul, that's fair
             case "region_name_capitalized":
-                return Character.isLetter(region.getId().charAt(0)) ? StringUtils.capitalize(region.getId()) : region.getId();
+                return Character.isLetter(region.getId().charAt(0))
+                        ? String.valueOf(region.getId().charAt(0)).toUpperCase() + region.getId().substring(1)
+                        : region.getId();
             case "region_owner": {
                 // Create a set of owners
                 Set<String> owners = new HashSet<>();
@@ -219,6 +232,12 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
         } catch (IndexOutOfBoundsException ex) {
             return null;
         }
+    }
+    private List<String> getRegions(Location location) {
+        return worldguard.getRegions(location)
+                .stream()
+                .map(IWrappedRegion::getId)
+                .collect(Collectors.toList());
     }
 
     /**
