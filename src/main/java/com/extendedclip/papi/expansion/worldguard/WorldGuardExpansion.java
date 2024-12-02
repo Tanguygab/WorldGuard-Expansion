@@ -144,6 +144,14 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
             return region.getFlags().keySet().stream().anyMatch(f ->
                     f.getName().equalsIgnoreCase(rg[1])) ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
         }
+        if (params.startsWith("region_flag_")) {
+            final String[] rg = params.split("region_flag_");
+            if (rg.length < 1) return null;
+
+            Object flag = region.getFlags().keySet().stream().filter(f ->
+                    f.getName().equalsIgnoreCase(rg[1])).map(region::getFlag).findAny().orElse(null);
+            return flag == null ? "" : flag.toString();
+        }
 
         // Defined as a switch statement to keep thinks clean
         switch (params) {
