@@ -148,9 +148,12 @@ public class WorldGuardExpansion extends PlaceholderExpansion {
             final String[] rg = params.split("region_flag_");
             if (rg.length < 1) return null;
 
-            Object flag = region.getFlags().keySet().stream().filter(f ->
+            Optional<?> flag = region.getFlags().keySet().stream().filter(f ->
                     f.getName().equalsIgnoreCase(rg[1])).map(region::getFlag).findAny().orElse(null);
-            return flag == null ? "" : flag.toString();
+            if (flag == null || !flag.isPresent()) return "";
+            return flag.get() instanceof Optional && ((Optional<?>) flag.get()).isPresent()
+                    ? String.valueOf(((Optional<?>) flag.get()).get())
+                    : "";
         }
 
         // Defined as a switch statement to keep thinks clean
